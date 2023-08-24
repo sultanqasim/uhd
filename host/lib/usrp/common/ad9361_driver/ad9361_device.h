@@ -12,6 +12,7 @@
 #include <uhd/types/sensors.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <ad9361_client.h>
+#include <chrono>
 #include <complex>
 #include <functional>
 #include <map>
@@ -313,6 +314,7 @@ private: // Members
     ad9361_params::sptr _client_params;
     ad9361_io::sptr _io_iface;
     // Intermediate state
+    std::chrono::time_point<std::chrono::steady_clock> _last_rx_tune_time;
     double _rx_freq, _tx_freq, _req_rx_freq, _req_tx_freq;
     double _last_rx_cal_freq, _last_tx_cal_freq;
     double _rx_analog_bw, _tx_analog_bw, _rx_bb_lp_bw, _tx_bb_lp_bw;

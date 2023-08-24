@@ -2119,6 +2119,7 @@ double ad9361_device_t::tune(direction_t direction, const double value)
 {
     std::lock_guard<std::recursive_mutex> lock(_mutex);
     double last_cal_freq;
+    bool skip_cal = false;
 
     if (direction == RX) {
         if (freq_is_nearly_equal(value, _req_rx_freq)) {
@@ -2154,13 +2155,22 @@ double ad9361_device_t::tune(direction_t direction, const double value)
     /* Update the gain settings. */
     _reprogram_gains();
 
+    /* Skip RX calibration if we are retuning very frequently, and need quick sweeps */
+    if (direction == RX) {
+        const auto now = std::chrono::steady_clock::now();
+        const auto elapsed = now - _last_rx_tune_time;
+        if (elapsed < std::chrono::milliseconds(300)) skip_cal = true;
+        _last_rx_tune_time = now;
+    }
+
     /*
      * Only run the following calibrations if we are more than 100MHz away
      * from the previous Tx or Rx calibration point. Leave out single shot
      * Rx quadrature unless Rx quad-cal is disabled.
      */
-    if (std::abs(last_cal_freq - tune_freq) > AD9361_CAL_VALID_WINDOW) {
+    if (!skip_cal && std::abs(last_cal_freq - tune_freq) > AD9361_CAL_VALID_WINDOW) {
         /* Run the calibration algorithms. */
+
         if (direction == RX) {
             _calibrate_rf_dc_offset();
             if (!_use_iq_balance_tracking)
