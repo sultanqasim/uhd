@@ -173,6 +173,9 @@ public:
     {
         libusb::session::sptr sess = libusb::session::get_global_session();
 
+        if (sess == NULL)
+            throw uhd::os_error("null libusb session");
+
         // allocate a new list of devices
         libusb_device** dev_list;
         ssize_t ret = libusb_get_device_list(sess->get_context(), &dev_list);
